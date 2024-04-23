@@ -1,11 +1,16 @@
-import streamlit as st
-from openai import OpenAI
-import tiktoken
-import pandas as pd
-from scipy import spatial
-import os  # Ensure os is imported
-import pickle
-
+"""
+# ------------- # <HEADERS> # ------------- #
+# Description:
+#   This script extract the main Twitter features for a given cryptocurrency:
+#       1. comment, retweet, like, views
+#
+#   The goal is to use the numerical information for training model combined with the work on learning features
+#   representation.
+#
+# Last revision: 18.08.2023
+#
+# ------------- # </HEADERS> # ------------- #
+"""
 
 
 import requests
@@ -107,7 +112,7 @@ class TwitterScrapper:
         except:
             print('Log in problem - Maybe captcha or 2-step identification')
 
-    def scroll_and_fetch(self):
+    def scroll_and_fetch(self, account):
         """
 
         Args:
@@ -121,7 +126,7 @@ class TwitterScrapper:
         text = []
         try:
             # Advanced search
-            self.driver.get("https://twitter.com/search?q=(%40Sunrise_de)&src=typed_query")
+            self.driver.get("https://twitter.com/search?q=from%3A%40"+account+"&src=typed_query&f=top")
             time.sleep(3)
             WebDriverWait(self.driver, 20).until(EC.visibility_of_element_located((By.XPATH, "//*[contains(text(),'Latest')]"))).click()
         except:
@@ -139,13 +144,23 @@ class TwitterScrapper:
             # Iterate over a components to get all elements
             all_cards = self.driver.find_elements(By.CSS_SELECTOR, 'article')
 
-            for card in all_cards:                
+            for card in all_cards:
+                card_infos = card.find_elements(By.CSS_SELECTOR, 'span[data-testid="app-text-transition-container"]')                
+                if len(card_infos)==4:
+                    infos["replies"].append(card_infos[0].text)
+                    infos["retweets"].append(card_infos[1].text)
+                    infos["like"].append(card_infos[2].text)
+                    infos["vues"].append(card_infos[3].text)
+                else:
+                    infos["replies"].append(card_infos[0].text)
+                    infos["retweets"].append(card_infos[1].text)
+                    infos["like"].append(card_infos[2].text)
                 card_text = card.find_elements(By.CSS_SELECTOR, 'span[data-testid="tweetText"]')
                 text.append(card_text.text)
 
         except:
             print("Can't fetch all data points")    
-        return text
+        return [infos, text]
     
     def convert_strings_to_numbers(self, string_list):
         converted_numbers = []
@@ -164,106 +179,26 @@ class TwitterScrapper:
             return converted_numbers
         except:
             return math.nan
-    def fetch_account(self,bot):
+    def fetch_account(self, excel):
         data = pd.DataFrame(columns=["data","replies","retweets","like","vues"])
         cwd = os.path.dirname(os.getcwd())
-        infos = bot.scroll_and_fetch()
-        return infos
+        excel_data_df = pd.read_excel(os.path.dirname(cwd)+ excel, sheet_name='Sheet1')
+        for i in range(len(excel_data_df.twitter_accounts)):
+            crypto = excel_data_df.twitter_accounts[i].replace('https://twitter.com/', '')
+            infos = bot.scroll_and_fetch(crypto)[1]
+            replies = bot.convert_strings_to_numbers(infos["replies"])
+            retweets = bot.convert_strings_to_numbers(infos["retweets"])
+            like = bot.convert_strings_to_numbers(infos["like"])
+            vues = bot.convert_strings_to_numbers(infos["vues"])
+            current  = pd.DataFrame({"crypto":[crypto], "replies":[np.mean(replies)], "retweets":[np.mean(retweets)], "like":[np.mean(like)], "vues":[np.mean(vues)]})
+            data.concat(current, ignore_index = True)
+            data.to_csv('output.csv')
+        return data
 
 
+bot = TwitterScrapper(username, password)
+bot.login()
+excel ='/data/twitter_accounts_test.xlsx'
+data = bot.fetch_account(excel)
 
-
-API_KEY = os.getenv('OPENAI_API_KEY')
-
-client = OpenAI(api_key=API_KEY)
-
-# Constants for model names
-EMBEDDING_MODEL = "text-embedding-ada-002"
-GPT_MODEL = "gpt-3.5-turbo"
-
-def save_embeddings(embeddings, filename):
-    with open(filename, 'wb') as f:
-        pickle.dump(embeddings, f)
-
-# Example of saving DataFrame to a pickle file
-def create_and_save_embeddings(file_path):
-    with open(file_path, 'r') as f:
-        text = f.read()
-    embedding_response = client.embeddings.create(
-        model=EMBEDDING_MODEL,
-        input=text,
-    )
-    embeddings = [embedding_response.data[0].embedding]
-    df = pd.DataFrame({'text': [text], 'embedding': embeddings})
-    save_embeddings(df, 'embeddings.pkl')  # Specify the filename
-    return df
-
-def load_embeddings(filename):
-    with open(filename, 'rb') as f:
-        return pickle.load(f)
-
-def strings_ranked_by_relatedness(query, df):
-    query_embedding_response = client.embeddings.create(
-        model=EMBEDDING_MODEL,
-        input=query,
-    )
-    query_embedding = query_embedding_response.data[0].embedding
-    strings_and_relatednesses = [
-        (row["text"], 1 - spatial.distance.cosine(query_embedding, row["embedding"]))
-        for i, row in df.iterrows()
-    ]
-    strings_and_relatednesses.sort(key=lambda x: x[1], reverse=True)
-    strings, relatednesses = zip(*strings_and_relatednesses)
-    return strings[:100], relatednesses[:100]
-
-def num_tokens(text):
-    encoding = tiktoken.encoding_for_model(GPT_MODEL)
-    return len(encoding.encode(text))
-
-def query_message(query, df, token_budget=4096 - 500):
-    strings, relatednesses = strings_ranked_by_relatedness(query, df)
-    message = 'Use the below articles to answer the subsequent question. If the answer cannot be found in the articles, write "I could not find an answer."'
-    question = f"\n\nQuestion: {query}"
-    for string in strings:
-        next_article = f'\n\nArticle:\n"""\n{string}\n"""'
-        if num_tokens(message + next_article + question) > token_budget:
-            break
-        else:
-            message += next_article
-    return message + question
-
-def ask(query, df):
-    message = query_message(query, df)
-    messages = [
-        {"role": "system", "content": "You answer questions about the text."},
-        {"role": "user", "content": message},
-    ]
-    response = client.chat.completions.create(
-        model=GPT_MODEL,
-        messages=messages,
-        temperature=0
-    )
-    return response.choices[0].message.content
-
-def main():
-    embeddings_file = 'embeddings.pkl'  # or 'embeddings.npy' for numpy
-    try:
-        username = "KyvnScr"
-        password = "SVisBetterThanArchi"
-        bot = TwitterScrapper(username, password)
-        bot.login()
-        data = bot.fetch_account(bot)
-        st.text_area(data)
-        df = load_embeddings(embeddings_file)
-        st.write("Loaded embeddings from file.")
-    except FileNotFoundError:
-        st.write("Embeddings file not found. Creating new embeddings...")
-        df = create_and_save_embeddings('data/d1.txt')  # Adjust as necessary for numpy
-
-    user_input = st.text_input("Enter your query:", "")
-    if st.button("Send") and user_input:
-        response = ask(user_input, df)
-        st.text_area("Response", response, height=300)
-
-if __name__ == "__main__":
-    main()
+data.to_csv('output.csv')
