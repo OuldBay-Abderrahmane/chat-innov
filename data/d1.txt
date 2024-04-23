@@ -1,0 +1,15 @@
+Setting up a WIFI guest network
+Are you looking for information on how to set up a WIFI guest network on your modem? Then you’re in the right place.
+
+1. Log in to your modem.
+2. Click on Advanced settings - Wireless - Guest network on the left-hand side.
+3. We will now explain the settings, which are numbered in the picture:
+1 Activate or deactivate the guest WIFI.
+2 Give your WIFI its own name. You can customize the default WIFI name.
+3 Specify whether you want your WIFI to be found in the search. If you select No, your WIFI can only be found manually if the name of the WIFI is known. We recommend leaving these settings at Yes.
+4 Select the security protocol.
+5 Enter a new WIFI password here.
+6 Click on Apply changes to apply all your changes.
+
+You have now successfully configured / customized the guest WIFI.
+
