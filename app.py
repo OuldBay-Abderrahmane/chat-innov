@@ -95,7 +95,7 @@ class TwitterScrapper:
             print('Found password')
             password.send_keys(self.password)
             time.sleep(3)
-            WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.CLASS_NAME, 'css-18t94o4 ')))
+            WebDriverWait(driver, 20).until(EC.presence_of_element_located(By.XPATH, "//*[contains(text(),'Log in')]"))
             password.send_keys(Keys.RETURN)  # click the ENTER key to login
             time.sleep(5)
         except:
@@ -173,9 +173,10 @@ class TwitterScrapper:
 
 
 
-API_KEY = os.getenv('OPENAI_API_KEY')
+#API_KEY = os.getenv('OPENAI_API_KEY')
 
-client = OpenAI(api_key=API_KEY)
+#client = OpenAI(api_key=API_KEY)
+client = OpenAI()
 
 # Constants for model names
 EMBEDDING_MODEL = "text-embedding-ada-002"

@@ -13,3 +13,43 @@ Are you looking for information on how to set up a WIFI guest network on your mo
 
 You have now successfully configured / customized the guest WIFI.
 
+
+
+
+
+
+I’ve suddenly had to reset my modem, cause DNS resolution wasn’t working anymore on custom DNS servers like 8.8.8.8 or 1.1.1.1, I can now only have DNS resolution if i set it to the gateway itself.
+
+I was currently using 2 adguard instances and an unbound instance for DNS resolution, but apart from Unbound, using custom DNS servers didn’t work anymore.
+
+Any ideas?
+
+We have done the following on your modem:
+- IPv4 has been activated
+- the Surf Protect option has been removed
+
+The changeover will be completed in a few minutes. 
+
+
+Bei meiner UPC ConnectBox ist Portforwarding eingerichtet um auf mein Synology NAS zuzugreifen. Via Mobilesnetz funktioniert der Zugriff einwandfrei. Das Portforwarding ist manuell eingerichtet
+Wenn ich allerdings innerhalb vom privaten WLAN, in dem auch das NAS hängt, zugreifen möchte, dann klappt der Zugriff über meinnasname.synology.me:5001 nicht. Über die Private IP vom NAS kann ich darauf zugreifen.
+Im Log der UPC-Box sind keine Logs zu erkennen, die auf ein Problem schliessen.
+Vor zwei Tagen war die Box noch im Bridge Modus und ein TP-Link deco übernahm das Routing, inkl. Portforwarding. Da hat der Zugriff via meinnasname.synology.me:5001 von innerhalb dem wlan funktioniert.
+Ich hatte das Problem bereits früher, jedoch hab ich nie herausgefunden, an welcher Schraube ich drehen muss, damits mit der ConnectBox klappt.
+
+Ist das Problem bekannt?
+
+Die ConnectBox hat kein NAT-Loopback/Hairpinning.
+HIer wirds erklärt mit Liste am Schluss:
+NAT-Loopback oder “wie DynDNS fürs interne Netzwerk fit gemacht werden kann” | datamate
+
+
+
+
+For a while now my Connect Box main light has been constantly displaying red. What does this mean? The instruction manual doesn’t mention what a red light means; only that it should be white when the box is fully ready. When I reboot the box, it does go white in the beginning then shortly after it turns red.
+The internet and wifi still work, but I do have problems (especially on my smartphone) with the Wifi connection cutting out quite frequently, then my phone falls back to the mobile network connection until it can reconnect to the Wifi. Maybe it’s connected to the red light somehow?
+It’s weird that the light can turn a colour which isn’t even described in the manual. And it’s funny that with a red light the internet connection still actually works. Photo attached.
+
+Seems to mean the box is overheating!  Are you keeping it in the oven? 🙂
+Anyway, turn it off for 10 minutes, and turn it back on again.  If it stays white, you’re done. If it starts off white then goes red after a few minutes then it;'s either genuinely overheating or it’s faulty.  If it goes red pretty much immediately then it’s definiitely faulty.
+Edit:  My answer is based on Virgin Media’s connectbox as it seems to be the same hardware but with better documentation.  UPC’s docs don’t mention any red light for the connectbox (although they do for the gigabox or whatever it’s called).
